@@ -12,8 +12,8 @@ async function seedAdmin() {
   try {
     await client.connect();
 
-    const email = process.env.SEED_ADMIN_EMAIL || "akrammulani11@gmail.com";
-    const password = process.env.SEED_ADMIN_PASSWORD || "Admin123"; // default password
+    const email = process.env.SEED_ADMIN_EMAIL || "";
+    const password = process.env.SEED_ADMIN_PASSWORD || "";
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Check if admin already exists
