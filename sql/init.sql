@@ -3,8 +3,10 @@ CREATE TABLE admins (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255),
-    reset_token VARCHAR(255),
-    reset_expires TIMESTAMP,
+    access_token TEXT,
+    access_token_expires TIMESTAMP,
+    refresh_token TEXT,
+    refresh_token_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT now()
 );
 
