@@ -1,50 +1,115 @@
 const express = require('express');
-const axios = require('axios');
 require('dotenv').config();
-const { saveEbayToken } = require('../db');
+const { saveEbayToken, getUserByEmail } = require('../db');
+const { default: EBAY } = require('../services/ebay');
+const { refreshEbayTokens } = require('../jobs/tokenRefresher');
 
 const router = express.Router();
 
-// eBay redirects here after login success
+
 router.get("/oauth", async (req, res) => {
   const { email, code, success } = req.query;
 
   if (!code) {
     return res.status(400).send("No code received from eBay.");
   }
+  return await EBAY.oAuthToken(email, code, res);
+});
 
-  try {
-    const response = await axios.post(
-      "https://api.ebay.com/identity/v1/oauth2/token",
-      new URLSearchParams({
-        grant_type: "authorization_code",
-        code: code,
-        redirect_uri: process.env.EBAY_RUNAME,
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(
-            `${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`
-          ).toString("base64")}`,
-        },
-      }
+router.get("/products", async (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    await refreshEbayTokens(email);
+
+    // Fetch user from your database
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    else if (!user.access_token) {
+      return res.status(403).json({ error: "eBay access token not found for this user" });
+    }
+
+    return await EBAY.getProducts(user, res);
+
+});
+
+// POST /products/add
+router.post("/products/add", async (req, res) => {
+    const { email, sku, title, description, quantity, imageUrls } = req.body;
+
+    if (!email || !sku || !title || !quantity) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    await refreshEbayTokens(email);
+
+    const user = await getUserByEmail(email);
+    if (!user || !user.access_token) {
+      return res.status(404).json({ error: "User not found or not authorized" });
+    }
+
+    return await EBAY.addProductToInventory(
+      user, 
+      sku, 
+      title, 
+      description,
+      quantity, 
+      imageUrls, 
+      res
     );
 
-    console.log("✅ Token Response:", response.data);
-    const result = await saveEbayToken(email, response.data);
-    console.log("Token saved for user:", result);
-
-    return res.status(200).json({
-      success: true,
-    });
-  } catch (error) {
-    console.error("❌ Token exchange error:", error.response?.data || error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.response?.data || error.message,
-    });
-  }
 });
+
+router.put('/products', async (req, res) => {
+  const { sku, email } = req.query;
+  const { title, description, quantity, imageUrls } = req.body;
+
+  if (!email || !sku) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  await refreshEbayTokens(email);
+
+  const user = await getUserByEmail(email);
+  if (!user || !user.access_token) {
+    return res.status(404).json({ error: "User not found or not authorized" });
+  }
+  
+  return await EBAY.updateProductInInventory(
+    user,
+    sku,
+    title,
+    description,
+    quantity,
+    imageUrls,
+    res
+  );
+
+});
+
+router.delete('/products', async (req, res) => {
+  const { sku, email } = req.query;
+  
+  if (!sku || !email) {
+    return res.status(400).json({ success: false, message: 'SKU and Email is required' });
+  }
+
+  await refreshEbayTokens(email);
+
+  const user = await getUserByEmail(req.query.email);
+  if (!user || !user.access_token) {
+    return res.status(404).json({ error: "User not found or not authorized" });
+  }
+
+  return await EBAY.deleteProductFromInventory(
+    user,
+    sku,
+    res
+  );
+});
+
+
 
 module.exports = router;
