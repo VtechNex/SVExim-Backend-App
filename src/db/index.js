@@ -48,6 +48,13 @@ async function updateEbayTokens(adminEmail, newAccessToken, newExpiresIn) {
   );
 }
 
+async function getUserByEmail(email) {
+  const result = await pool.query(
+    `SELECT id, email, access_token, access_token_expires, refresh_token, refresh_token_expires FROM admins WHERE email = $1`,
+    [email]
+  );
+  return result.rows[0];
+}
 
 
 module.exports = {
@@ -55,5 +62,6 @@ module.exports = {
     pool,
     saveEbayToken,
     getExpiringTokens,
-    updateEbayTokens
+    updateEbayTokens,
+    getUserByEmail
 };
