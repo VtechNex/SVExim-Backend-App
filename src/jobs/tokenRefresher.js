@@ -1,23 +1,29 @@
 // jobs/tokenRefresher.js
 const cron = require("node-cron");
 const axios = require("axios");
-const { getExpiringTokens, updateEbayTokens } = require("../db");
+const { getExpiringTokens, updateEbayTokens, getUserByEmail } = require("../db");
 
-async function refreshEbayTokens() {
+async function refreshEbayTokens(email) {
     console.log("🔄 Checking for eBay tokens to refresh...");
     const expiringUsers = await getExpiringTokens();
     if (expiringUsers.length === 0) return;
+    
+    const user = await getUserByEmail(email);
+    if (!user) {
+        console.error(`❌ No user found with email: ${email}`);
+        return;
+    }
 
-    console.log(`🔄 Found ${expiringUsers.length} tokens to refresh`);
+    // console.log(`🔄 Found ${expiringUsers.length} tokens to refresh`);
 
-    for (const user of expiringUsers) {
+    // for (const user of expiringUsers) {
         try {
             const response = await axios.post(
                 "https://api.ebay.com/identity/v1/oauth2/token",
                 new URLSearchParams({
                     grant_type: "refresh_token",
                     refresh_token: user.refresh_token,
-                    scope: "https://api.ebay.com/oauth/api_scope",
+                    scope: process.env.EBAY_SCOPES,
                 }),
                 {
                     headers: {
@@ -36,8 +42,10 @@ async function refreshEbayTokens() {
         } catch (err) {
             console.error(`❌ Failed to refresh token for ${user.email}:`, err.message);
         }
-    }
+    // }
 }
 
 // Run every 10 minutes
-cron.schedule("*/10 * * * *", refreshEbayTokens);
+// cron.schedule("*/10 * * * *", refreshEbayTokens);
+
+module.exports = { refreshEbayTokens };
