@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
 
 
 // POST /auth/forgot-password
-router.post('/api/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
     try {
@@ -67,7 +67,7 @@ router.post('/api/forgot-password', async (req, res) => {
 
 
 // POST /auth/reset-password
-router.post('/api/reset-password', async (req, res) => {
+router.post('/reset-password', async (req, res) => {
     const { email, token, password } = req.body;
     if (!email || !token || !password) return res.status(400).json({ error: 'Missing fields' });
     try {
