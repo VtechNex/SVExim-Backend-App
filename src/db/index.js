@@ -40,6 +40,17 @@ async function getExpiringTokens() {
   return result.rows;
 }
 
+async function getRefreshTokenExpiry() {
+  // Fetch users whose refresh_token is about to expire in next 5 days
+    const query = `
+      SELECT id, email, refresh_token_expires
+      FROM admins
+      WHERE refresh_token_expires BETWEEN NOW() AND NOW() + INTERVAL '5 days';
+    `;
+    const result = await pool.query(query);
+    return result.rows;
+}
+
 async function updateEbayTokens(adminEmail, newAccessToken, newExpiresIn) {
   const newExpiry = new Date(Date.now() + newExpiresIn * 1000);
   await pool.query(
@@ -193,6 +204,7 @@ module.exports = {
     pool,
     saveEbayToken,
     getExpiringTokens,
+    getRefreshTokenExpiry,
     updateEbayTokens,
     getUserByEmail,
     addProductsToDatabase,

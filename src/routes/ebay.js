@@ -1,6 +1,6 @@
 const express = require('express');
 require('dotenv').config();
-const { getUserByEmail, addProductsToDatabase } = require('../db');
+const { getUserByEmail, addProductsToDatabase, getExpiringTokens } = require('../db');
 const { default: EBAY } = require('../services/ebay');
 const { refreshEbayTokens } = require('../jobs/tokenRefresher');
 
@@ -9,6 +9,15 @@ const router = express.Router();
 
 router.get("/oauth", async (req, res) => {
   const { email, code, success } = req.query;
+
+  const user = await getUserByEmail(email);
+  if (!user) {
+    return res.status(404).send("User not found.");
+  }
+
+  if (new Date(user.refresh_token_expires) > new Date()) {
+    return res.status(201).send("Your ebay connection is active");
+  }
 
   if (!code) {
     return res.status(400).send("No code received from eBay.");
