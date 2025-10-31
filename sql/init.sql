@@ -13,25 +13,25 @@ CREATE TABLE admins (
 
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
+    sku VARCHAR(255) UNIQUE,
     title TEXT NOT NULL,
     description TEXT,
     price NUMERIC(10,2),
     currency VARCHAR(10),
-    ebay_id VARCHAR(255) UNIQUE,
     images JSONB,
-    attributes JSONB,
+    quantity NUMERIC(10, 2),
+    condition VARCHAR(10),
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
 );
 
 
-CREATE TABLE quotes (
-    id SERIAL PRIMARY KEY,
-    product_id INT REFERENCES products(id) ON DELETE CASCADE,
-    admin_id INT REFERENCES admins(id) ON DELETE SET NULL,
-    parent_id INT REFERENCES quotes(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT now()
-);
+-- CREATE TABLE quotes (
+--     id SERIAL PRIMARY KEY,
+--     product_id INT REFERENCES products(id) ON DELETE CASCADE,
+--     admin_id INT REFERENCES admins(id) ON DELETE SET NULL,
+--     parent_id INT REFERENCES quotes(id) ON DELETE CASCADE,
+--     content TEXT NOT NULL,
+--     created_at TIMESTAMP DEFAULT now()
+-- );
 
-ALTER TABLE products ADD CONSTRAINT unique_ebay_id UNIQUE (ebay_id);
