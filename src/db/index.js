@@ -56,6 +56,137 @@ async function getUserByEmail(email) {
   return result.rows[0];
 }
 
+async function addProductsToDatabase(products) {
+  if (!products || products.length === 0) return;
+
+  const values = [];
+  const placeholders = [];
+
+  products.forEach((p, i) => {
+    const {
+      sku,
+      product: { title, description, imageUrls },
+      condition,
+      availability: {
+        shipToLocationAvailability: { quantity },
+      },
+    } = p;
+
+    // push the values
+    values.push(
+      sku || "",
+      title || "",
+      description || "",
+      0, // price (you can map it later if available)
+      'USD', // currency (change if needed)
+      JSON.stringify(imageUrls || []),
+      quantity || 0,
+      condition || 'NEW'
+    );
+
+    // create placeholder group for each row
+    const base = i * 8;
+    placeholders.push(
+      `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8})`
+    );
+  });
+
+  const query = `
+    INSERT INTO products 
+      (sku, title, description, price, currency, images, quantity, condition)
+    VALUES 
+      ${placeholders.join(', ')}
+    ON CONFLICT (sku) 
+    DO UPDATE SET
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      images = EXCLUDED.images,
+      quantity = EXCLUDED.quantity,
+      condition = EXCLUDED.condition,
+      updated_at = now();
+  `;
+
+  const result = await pool.query(query, values);
+  console.log(`✅ Synced ${products.length} products to database`);
+  return result;
+}
+
+async function addProductToDatabase(product) {
+  const { sku, title, description, price, currency, images, quantity, condition } = product;
+  const query = `
+    INSERT INTO products 
+      (sku, title, description, price, currency, images, quantity, condition)
+    VALUES 
+      ($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (sku) 
+    DO UPDATE SET
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      images = EXCLUDED.images,
+      quantity = EXCLUDED.quantity,
+      condition = EXCLUDED.condition,
+      updated_at = now();
+  `;
+  const values = [sku, title, description, price, currency, JSON.stringify(images), quantity, condition];
+  const result = await pool.query(query, values);
+  return result;
+}
+
+async function getAllProducts(page = 1, limit = 20, search = "", sortBy = "updated_at", order = "DESC") {
+  const offset = (page - 1) * limit;
+  const searchQuery = `%${search}%`;
+
+  const result = await pool.query(
+    `SELECT * FROM products 
+     WHERE title ILIKE $1 OR description ILIKE $1
+     ORDER BY ${sortBy} ${order}
+     LIMIT $2 OFFSET $3`,
+    [searchQuery, limit, offset]
+  );
+
+  const totalResult = await pool.query(
+    `SELECT COUNT(*) FROM products WHERE title ILIKE $1 OR description ILIKE $1`,
+    [searchQuery]
+  );
+
+  const total = parseInt(totalResult.rows[0].count, 10);
+  const totalPages = Math.ceil(total / limit);
+
+  return { products: result.rows, pagination: { total, page, limit, totalPages } };
+}
+
+async function deleteProduct(id) {
+  const result = await pool.query(
+    `DELETE FROM products WHERE id = $1`,
+    [id]
+  );
+  return result;
+}
+
+async function updateProduct(id, fields) {
+  const setClauses = [];
+  const values = [];
+  let index = 1;
+
+  for (const key in fields) {
+    setClauses.push(`${key} = $${index}`);
+    values.push(fields[key]);
+    index++;
+  }
+  values.push(id);
+
+  const query = `
+    UPDATE products
+    SET ${setClauses.join(', ')}, updated_at = now()
+    WHERE id = $${id}
+    RETURNING *;
+  `;
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+}
+
+
 
 module.exports = {
     query: (text, params) => pool.query(text, params),
@@ -63,5 +194,10 @@ module.exports = {
     saveEbayToken,
     getExpiringTokens,
     updateEbayTokens,
-    getUserByEmail
+    getUserByEmail,
+    addProductsToDatabase,
+    addProductToDatabase,
+    getAllProducts,
+    deleteProduct,
+    updateProduct
 };
