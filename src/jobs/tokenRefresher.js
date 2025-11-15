@@ -5,7 +5,7 @@ const { getExpiringTokens, updateEbayTokens, getUserByEmail, getRefreshTokenExpi
 
 async function refreshEbayTokens(email) {
     console.log("🔄 Checking for eBay tokens to refresh...");
-    const expiringUsers = await getExpiringTokens();
+    const expiringUsers = await getExpiringTokens(email);
     if (expiringUsers.length === 0) return;
     
     const user = await getUserByEmail(email);
