@@ -30,11 +30,11 @@ async function saveEbayToken(email, tokenData) {
   }
 }
 
-async function getExpiringTokens() {
+async function getExpiringTokens(email) {
   const query = `
     SELECT id, email, refresh_token, refresh_token_expires
     FROM admins
-    WHERE access_token_expires < NOW() + INTERVAL '5 minutes';
+    WHERE email='${email}' and access_token_expires < NOW() + INTERVAL '5 minutes';
   `;
   const result = await pool.query(query);
   return result.rows;
@@ -184,12 +184,14 @@ async function updateProduct(id, fields) {
     values.push(fields[key]);
     index++;
   }
+
+  // add id as the last parameter
   values.push(id);
 
   const query = `
     UPDATE products
     SET ${setClauses.join(', ')}, updated_at = now()
-    WHERE id = $${id}
+    WHERE id = ${id}
     RETURNING *;
   `;
 
@@ -197,6 +199,34 @@ async function updateProduct(id, fields) {
   return result.rows[0];
 }
 
+async function getBrands() {
+  const result = await pool.query(`SELECT * FROM brands ORDER BY name ASC`);
+  return result.rows;
+}
+
+async function addBrand(name, description, logoUrl) {
+  const result = await pool.query(
+    `INSERT INTO brands (name, description, logo_url) VALUES ($1, $2, $3) RETURNING *`,
+    [name, description, logoUrl]
+  );
+  return result.rows[0];
+}
+
+async function updateBrand(id, name, description, logoUrl) {
+  const result = await pool.query(
+    `UPDATE brands SET name = $1, description = $2, logo_url = $3 WHERE id = $4 RETURNING *`,
+    [name, description, logoUrl, id]
+  );
+  return result.rows[0];
+}
+
+async function deleteBrand(id) {
+  const result = await pool.query(
+    `DELETE FROM brands WHERE id = $1`,
+    [id]
+  );
+  return result;
+}
 
 
 module.exports = {
@@ -211,5 +241,9 @@ module.exports = {
     addProductToDatabase,
     getAllProducts,
     deleteProduct,
-    updateProduct
+    updateProduct,
+    getBrands,
+    addBrand,
+    updateBrand,
+    deleteBrand
 };
