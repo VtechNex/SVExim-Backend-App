@@ -10,6 +10,8 @@ const router = express.Router();
 router.get("/oauth", async (req, res) => {
   const { email, code, success } = req.query;
 
+  await refreshEbayTokens(email);
+
   const user = await getUserByEmail(email);
   if (!user) {
     return res.status(404).send("User not found.");
