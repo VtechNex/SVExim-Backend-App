@@ -20,9 +20,19 @@ CREATE TABLE products (
     currency VARCHAR(10),
     images JSONB,
     quantity NUMERIC(10, 2),
-    condition VARCHAR(10),
+    condition VARCHAR(50),
+    statusColor VARCHAR(50),
+    brand VARCHAR(100),
+    category VARCHAR(100),
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE brands (
+  id SERIAL PRIMARY KEY,
+  name varchar(255) NOT NULL,
+  description text DEFAULT NULL,
+  logo_url text DEFAULT NULL
 );
 
 
