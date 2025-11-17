@@ -7,7 +7,10 @@ const pool = new Pool({
     port: process.env.DB_PORT,
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB
+    database: process.env.POSTGRES_DB,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // ✅ Function to save eBay OAuth token
