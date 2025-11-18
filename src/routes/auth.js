@@ -18,7 +18,7 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, admin.password);
         if (!match) return res.status(401).json({ error: 'Invalid email or password' });
         const payload = { id: admin.id, email: admin.email };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '1d' });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
         res.json({ token, admin: { id: admin.id, email: admin.email, name: admin.name } });
     } catch (err) {
         console.error(err);
@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
 
 
 // POST /auth/forgot-password
-router.post('/api/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
     try {
@@ -50,7 +50,7 @@ router.post('/api/forgot-password', async (req, res) => {
                 pass: process.env.EMAIL_PASS
             }
         });
-        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+        const resetUrl = `${process.env.WEB_APP_URI}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
         await transporter.sendMail({
             from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: email,
@@ -67,7 +67,7 @@ router.post('/api/forgot-password', async (req, res) => {
 
 
 // POST /auth/reset-password
-router.post('/api/reset-password', async (req, res) => {
+router.post('/reset-password', async (req, res) => {
     const { email, token, password } = req.body;
     if (!email || !token || !password) return res.status(400).json({ error: 'Missing fields' });
     try {

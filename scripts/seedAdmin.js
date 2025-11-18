@@ -1,19 +1,35 @@
 // scripts/seedAdmin.js
-import pkg from "pg";
+import { Pool } from "pg";
+import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import readline from "readline";
+dotenv.config();
 
-const { Client } = pkg;
-
-const client = new Client({
-  connectionString: process.env.DATABASE_URL || "postgres://marine_admin:admin123@localhost:5435/marine_db",
+const client = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 async function seedAdmin() {
   try {
-    await client.connect();
 
-    const email = process.env.SEED_ADMIN_EMAIL || "akrammulani11@gmail.com";
-    const password = process.env.SEED_ADMIN_PASSWORD || "Admin123"; // default password
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const question = (q) => new Promise((resolve) => rl.question(q, (ans) => resolve(ans)));
+
+    const email = await question("Admin email: ");
+    const password = await question("Admin password: ");
+    rl.close();
+
+    if (!email || !password) {
+      throw new Error("Email and password must be provided.");
+    }
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Check if admin already exists
@@ -30,8 +46,6 @@ async function seedAdmin() {
     }
   } catch (err) {
     console.error("❌ Error seeding admin:", err);
-  } finally {
-    await client.end();
   }
 }
 
