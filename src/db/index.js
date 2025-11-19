@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
 
 
 const pool = new Pool({
@@ -231,6 +232,20 @@ async function deleteBrand(id) {
   return result;
 }
 
+async function getUsers () {
+  const result =  await pool.query(`SELECT id, name, email, access_token, access_token_expires, refresh_token, refresh_token_expires FROM admins`);
+  return result.rows;
+}
+
+async function createUser(name, email, password) {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const result = await pool.query(
+    `INSERT INTO admins (name, email, password) VALUES ($1, $2, $3) RETURNING id, email`,
+    [name, email, passwordHash]
+  );
+  return result.rows[0];
+}
+
 
 module.exports = {
     query: (text, params) => pool.query(text, params),
@@ -248,5 +263,7 @@ module.exports = {
     getBrands,
     addBrand,
     updateBrand,
-    deleteBrand
+    deleteBrand,
+    getUsers,
+    createUser
 };
