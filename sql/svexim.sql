@@ -34,6 +34,9 @@ CREATE TABLE `brands` (
   `logo_url` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+ALTER TABLE brands 
+ADD COLUMN faq JSON DEFAULT NULL;
+
 -- --------------------------------------------------------
 
 --
