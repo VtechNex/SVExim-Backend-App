@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/admin');
 const ebayRoutes = require('./routes/ebay');
 const brandRoutes = require('./routes/brands');
 const userRoutes = require('./routes/users');
+const globUserRoutes = require('./routes/globUsers');
 
 const app = express();
 app.use(cors());
@@ -19,12 +20,13 @@ app.use(express.json());
 
 
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/admin/quotes', quoteRoutes);
+app.use('/api/products', authenticate, productRoutes);
+app.use('/api/admin/quotes', authenticate, quoteRoutes);
 app.use('/api/admin', authenticate, adminRoutes);
 app.use('/api/ebay', authenticate, ebayRoutes);
 app.use('/api/brands', authenticate, brandRoutes);
 app.use('/api/users', authenticate, userRoutes);
+app.use('/api/global', globUserRoutes);
 
 app.get('/', (req, res) => res.send('Marine machines backend up'));
 
