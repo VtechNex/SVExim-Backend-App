@@ -246,6 +246,22 @@ async function createUser(name, email, password) {
   return result.rows[0];
 }
 
+async function makeQuote (quote) {
+ const result = await pool.query(
+  `INSERT INTO quotes (name, email, phone, location, budget, message, pid)
+  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, email`,
+  [quote.name, quote.email, quote.phone, quote.location, quote.budget, quote.message, quote.product]
+ )
+ return result.rows[0];
+}
+
+async function getQuotes () {
+  const result = await pool.query(
+    `SELECT id, name, email, phone, location, budget, message, pid FROM quotes`
+  )
+  return result.rows;
+}
+
 
 module.exports = {
     query: (text, params) => pool.query(text, params),
@@ -265,5 +281,7 @@ module.exports = {
     updateBrand,
     deleteBrand,
     getUsers,
-    createUser
+    createUser,
+    makeQuote,
+    getQuotes
 };

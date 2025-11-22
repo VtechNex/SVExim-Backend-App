@@ -21,7 +21,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', authenticate, productRoutes);
-app.use('/api/admin/quotes', authenticate, quoteRoutes);
+app.use('/api/quotes', authenticate, quoteRoutes);
 app.use('/api/admin', authenticate, adminRoutes);
 app.use('/api/ebay', authenticate, ebayRoutes);
 app.use('/api/brands', authenticate, brandRoutes);
