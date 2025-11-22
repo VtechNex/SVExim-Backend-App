@@ -25,4 +25,29 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.put('/:id', async (req, res)=>{
+    const { id } = req.params;
+    const { name, email } = req.body;
+    if (!name || !email) return res.status(400).json({error: 'Missing username or email'})
+    try {
+        const updated = await db.updateUser(id, name, email);
+        return res.status(200).json({message: 'User is modified!'})
+    } catch (error) {
+        console.error('Error updating user', error);
+        return res.status(500).json({ error: 'Internal serer error'})
+    }
+})
+
+router.delete('/:id', async (req, res)=>{
+    const { id } = req.params;
+    if (!id) return res.status(400).json({error: 'Id is required to delete user'})
+    try {
+        const result = await db.deleteUser(id);
+        return res.status(200).json({message: 'User deleted successfully!'})
+    } catch (error) {
+        console.error('Error deleting user', error);
+        return res.status(500).json({error: 'Internal server error'})
+    }
+})
+
 module.exports = router;
