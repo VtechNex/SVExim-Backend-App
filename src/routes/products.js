@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllProducts, deleteProduct, updateProduct, addProductsToDatabase, addProductToDatabase } = require('../db');
+const { getAllProducts, deleteProduct, updateProduct, addProductsToDatabase, addProductToDatabase, getProduct } = require('../db');
 const router = express.Router();
 
 // GET /products - public (list with pagination)
@@ -16,6 +16,17 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+router.get('/:id', async (req, res)=>{
+  const { id } = req.params;
+  try {
+    const row = await getProduct(id);
+    res.status(200).json({ product: row })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' })
+  }
+})
 
 router.post('/add', async (req, res) => {
   const product = req.body;
