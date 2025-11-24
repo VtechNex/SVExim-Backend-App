@@ -151,13 +151,21 @@ async function getAllProducts(page = 1, limit = 20, search = "", sortBy = "updat
   const offset = (page - 1) * limit;
   const searchQuery = `%${search}%`;
 
-  const result = await pool.query(
-    `SELECT * FROM products 
-     WHERE title ILIKE $1 OR description ILIKE $1
-     ORDER BY ${sortBy} ${order}
-     LIMIT $2 OFFSET $3`,
-    [searchQuery, limit, offset]
-  );
+  let sql = `
+    SELECT * FROM products
+    WHERE title ILIKE $1 OR description ILIKE $1
+    ORDER BY ${sortBy} ${order}
+  `;
+
+  const params = [searchQuery];
+
+  // If limit is NOT -1 → apply pagination
+  if (limit !== -1) {
+    sql += ` LIMIT $2 OFFSET $3`;
+    params.push(limit, offset);
+  }
+
+  const result = await pool.query(sql, params);
 
   const totalResult = await pool.query(
     `SELECT COUNT(*) FROM products WHERE title ILIKE $1 OR description ILIKE $1`,
@@ -169,6 +177,7 @@ async function getAllProducts(page = 1, limit = 20, search = "", sortBy = "updat
 
   return { products: result.rows, pagination: { total, page, limit, totalPages } };
 }
+
 
 async function getProduct(id) {
   const result = await pool.query(`SELECT * FROM products WHERE id = $1`, [id]);
@@ -278,7 +287,7 @@ async function makeQuote (quote) {
 
 async function getQuotes () {
   const result = await pool.query(
-    `SELECT id, name, email, phone, location, budget, message, pid FROM quotes`
+    `SELECT id, name, email, phone, location, budget, message, pid, status FROM quotes`
   )
   return result.rows;
 }
