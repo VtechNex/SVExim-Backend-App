@@ -170,6 +170,11 @@ async function getAllProducts(page = 1, limit = 20, search = "", sortBy = "updat
   return { products: result.rows, pagination: { total, page, limit, totalPages } };
 }
 
+async function getProduct(id) {
+  const result = await pool.query(`SELECT * FROM products WHERE id = $1`, [id]);
+  return result.rows[0];
+}
+
 async function deleteProduct(id) {
   const result = await pool.query(
     `DELETE FROM products WHERE id = $1`,
@@ -290,6 +295,7 @@ module.exports = {
     addProductsToDatabase,
     addProductToDatabase,
     getAllProducts,
+    getProduct,
     deleteProduct,
     updateProduct,
     getBrands,
