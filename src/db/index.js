@@ -217,6 +217,22 @@ async function updateProduct(id, fields) {
   return result.rows[0];
 }
 
+async function countProducts(q = 0) {
+  let query = `SELECT COUNT(*) as count FROM products`;
+
+  if (q === 1) {
+    query = `
+      SELECT COUNT(*) as count 
+      FROM products
+      WHERE created_at >= NOW() - INTERVAL '5 minutes'
+    `;
+  }
+
+  const result = await pool.query(query);
+  return parseInt(result.rows[0].count, 10);
+}
+
+
 async function getBrands() {
   const result = await pool.query(`SELECT * FROM brands ORDER BY name ASC`);
   return result.rows;
@@ -307,6 +323,7 @@ module.exports = {
     getProduct,
     deleteProduct,
     updateProduct,
+    countProducts,
     getBrands,
     addBrand,
     updateBrand,

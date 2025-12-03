@@ -28,7 +28,7 @@ router.get("/oauth", async (req, res) => {
 });
 
 router.get("/products", async (req, res) => {
-  const { email } = req.query;
+  const { email, page = 1, totalPages = 1 } = req.query;
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   try {
@@ -37,7 +37,7 @@ router.get("/products", async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     if (!user.access_token) return res.status(403).json({ error: "eBay access token not found" });
 
-    const result = await EBAY.getProducts(user);
+    const result = await EBAY.getProducts(user, page, totalPages);
     return res.status(200).json(result);
 
   } catch (err) {
