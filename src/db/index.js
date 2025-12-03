@@ -81,6 +81,8 @@ async function addProductsToDatabase(products) {
     const {
       sku,
       product: { title, description, imageUrls },
+      price,
+      currency,
       condition,
       availability: {
         shipToLocationAvailability: { quantity },
@@ -92,8 +94,8 @@ async function addProductsToDatabase(products) {
       sku || "",
       title || "",
       description || "",
-      0, // price (you can map it later if available)
-      'USD', // currency (change if needed)
+      price, // price (you can map it later if available)
+      currency || 'USD', // currency (change if needed)
       JSON.stringify(imageUrls || []),
       quantity || 0,
       condition || 'NEW'
