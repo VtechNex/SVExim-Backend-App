@@ -226,7 +226,7 @@ async function countProducts(q = 0) {
     query = `
       SELECT COUNT(*) as count 
       FROM products
-      WHERE created_at >= NOW() - INTERVAL '10 minutes'
+      WHERE created_at >= NOW() - INTERVAL '30 minutes'
     `;
   }
 
