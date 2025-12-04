@@ -4,10 +4,10 @@ const router = express.Router();
 
 // Get all products in chunks
 router.get('/products', async (req, res) => {
-  const { page = 1, limit = 20, search } = req.query;
+  const { page = 1, limit = 20, search, ...filter } = req.query;
 
   try {
-    const rows = await getAllProducts(page, limit, search);
+    const rows = await getAllProducts(page, limit, search, filter);
     res.json({ items: rows.products, pagination: rows.pagination });
   } catch (err) {
     console.error(err);
