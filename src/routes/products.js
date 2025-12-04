@@ -1,16 +1,14 @@
 const express = require('express');
-const { getAllProducts, deleteProduct, updateProduct, addProductsToDatabase, addProductToDatabase, getProduct } = require('../db');
+const { getAllProducts, deleteProduct, updateProduct, addProductToDatabase, getProduct } = require('../db');
 const router = express.Router();
 
 // GET /products - public (list with pagination)
 router.get('/', async (req, res) => {
-  const { page = 1, limit = 20, search } = req.query;
-  const offset = 0;
+  const { page = 1, limit = 20, search = "", ...filters } = req.query;
 
   try {
-    const rows = await getAllProducts(page, limit, search);
-    const paginatedRows = rows.products.slice(offset, offset + limit);
-    res.json({ items: paginatedRows, pagination: rows.pagination});
+    const rows = await getAllProducts(page, limit, search, filters);
+    res.json({ items: rows.products, pagination: rows.pagination });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

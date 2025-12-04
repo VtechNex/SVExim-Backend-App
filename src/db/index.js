@@ -149,36 +149,112 @@ async function addProductToDatabase(product) {
   return result;
 }
 
-async function getAllProducts(page = 1, limit = 20, search = "", sortBy = "updated_at", order = "DESC") {
+async function getAllProducts(page = 1, limit = 20, search = "", filters = {}) {
   const offset = (page - 1) * limit;
-  const searchQuery = `%${search}%`;
+  const {
+    category,
+    brand,
+    condition,
+    status,
+    minPrice,
+    maxPrice,
+    sort = "updated_at_desc",
+  } = filters;
 
-  let sql = `
-    SELECT * FROM products
-    WHERE title ILIKE $1 OR description ILIKE $1
-    ORDER BY ${sortBy} ${order}
-  `;
+  // Sorting
+  const sortMap = {
+    price_asc:  "price ASC",
+    price_desc: "price DESC",
+    az:         "title ASC",
+    za:         "title DESC",
+    latest:     "updated_at DESC",
+    updated_at_desc: "updated_at DESC",
+  };
 
-  const params = [searchQuery];
+  const orderBy = sortMap[sort] || "updated_at DESC";
 
-  // If limit is NOT -1 → apply pagination
-  if (limit !== -1) {
-    sql += ` LIMIT $2 OFFSET $3`;
-    params.push(limit, offset);
+  // -------------------------------
+  // Build WHERE clause manually
+  // -------------------------------
+  const where = [];
+  const params = [];
+
+  // 1️⃣ Search
+  if (search && search.trim() !== "") {
+    params.push(`%${search}%`);
+    where.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length})`);
   }
 
+  // 2️⃣ category
+  if (category) {
+    params.push(category);
+    where.push(`category = $${params.length}`);
+  }
+
+  // 3️⃣ brand
+  if (brand) {
+    params.push(brand);
+    where.push(`brand = $${params.length}`);
+  }
+
+  // 4️⃣ condition
+  if (condition) {
+    params.push(condition);
+    where.push(`condition = $${params.length}`);
+  }
+
+  // 5️⃣ status
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+
+  // 6️⃣ minPrice
+  if (minPrice) {
+    params.push(minPrice);
+    where.push(`price >= $${params.length}`);
+  }
+
+  // 7️⃣ maxPrice
+  if (maxPrice) {
+    params.push(maxPrice);
+    where.push(`price <= $${params.length}`);
+  }
+
+  // Make WHERE SQL
+  const whereSQL = where.length > 0 ? "WHERE " + where.join(" AND ") : "";
+
+  // Main query
+  let sql = `
+    SELECT *
+    FROM products
+    ${whereSQL}
+    ORDER BY ${orderBy}
+  `;
+
+  // Pagination
+  if (limit !== -1) {
+    params.push(limit);
+    params.push(offset);
+    sql += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
+  console.log('SQL to get products: ', sql)
+  // Fetch results
   const result = await pool.query(sql, params);
 
-  const totalResult = await pool.query(
-    `SELECT COUNT(*) FROM products WHERE title ILIKE $1 OR description ILIKE $1`,
-    [searchQuery]
-  );
-
+  // Total count (NO LIMIT/OFFSET)
+  const countSql = `
+    SELECT COUNT(*) FROM products
+    ${whereSQL}
+  `;
+  const totalResult = await pool.query(countSql, params.slice(0, where.length));
   const total = parseInt(totalResult.rows[0].count, 10);
   const totalPages = Math.ceil(total / limit);
 
   return { products: result.rows, pagination: { total, page, limit, totalPages } };
 }
+
 
 
 async function getProduct(id) {
